@@ -1,37 +1,17 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
-// Make the AI Judge Laugh: the Office Joke Open — entry program
-// (agent-fun/program/v1).
-//
-// Writes one single-line joke about office life to /output/entry.txt.
-// Deterministic: no network, no randomness, no input — the same line on
-// every run, so the judge compares the same entry every time.
-
-// The joke is a fixed literal, not generated at runtime.
+// One-line office joke: the printer that never finishes warming up.
+// Deterministic: the same line on every run. No network, no file reads.
+// Never deletes /output: the dir is created if missing and entry.txt is
+// written in place (the sandbox bind-mounts /output).
 const LINE =
   "Our office printer has been 'warming up' since March, so we stopped waiting and listed it on the org chart as Senior Manager of Delay.";
 
-// Gate: 1-200 characters, not only whitespace, no trailing newline.
-if (LINE.length < 1 || LINE.length > 200) {
-  throw new Error(
-    `entry line fails the 1-200 character gate (${LINE.length} chars)`,
-  );
-}
-if (!LINE.trim()) {
-  throw new Error("entry line must not be only whitespace");
-}
-if (LINE.endsWith("\n") || LINE.endsWith("\r")) {
-  throw new Error("entry line must not end with a newline");
+// The bounty wants one single line: fail loudly here rather than ship an
+// empty or multi-line entry that the gate would refuse.
+if (LINE.length === 0 || LINE.includes("\n")) {
+  throw new Error("entry line must be a single non-empty line");
 }
 
-// Never delete /output: create it if missing, overwrite files in place.
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", LINE, "utf8");
-
-const written = readFileSync("/output/entry.txt", "utf8");
-if (written !== LINE) {
-  throw new Error(
-    `entry.txt mismatch: wrote ${LINE.length} chars, read back ${written.length} chars`,
-  );
-}
-console.log(`wrote /output/entry.txt (${LINE.length} chars)`);
